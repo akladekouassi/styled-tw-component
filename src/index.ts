@@ -1,1 +1,3 @@
-export * from "./component/styled";
+import Styled from "./component/styled";
+
+export default Styled;
