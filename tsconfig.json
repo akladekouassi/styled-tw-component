@@ -12,6 +12,10 @@
     "outDir": "./dist",
     "esModuleInterop": true,
 
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "strictNullChecks": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

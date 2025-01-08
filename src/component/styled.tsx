@@ -2,12 +2,9 @@
 import React from "react";
 import clsx from "clsx";
 
-type CType = keyof JSX.IntrinsicElements | React.ElementType;
+type CType = keyof JSX.IntrinsicElements | React.ElementType | React.FC<any>;
 
-/**
- * Props for the `Styled` component.
- */
-type StyledProps<T extends CType, P = unknown> = {
+type StyledProps<T extends CType, P = object> = {
   as?: T;
   className?: string;
   children?: React.ReactNode;
@@ -15,18 +12,15 @@ type StyledProps<T extends CType, P = unknown> = {
 } & React.ComponentPropsWithoutRef<T> &
   P;
 
-/**
- * Configuration options for the `Styled` component.
- */
 type StyledComponentConfig<P, T extends CType> = {
   baseClass?: string | ((props: P) => string);
   as?: T;
   variants?: Record<string, string>;
-  styleFn?: (props: P) => string;
+  styleWithProps?: (props: P) => string;
 };
 
 /**
- * A generic utility to create styled components with Tailwind CSS and dynamic props.
+ * Creates a styled component with a given tag.
  */
 function createStyled<P extends object = object, T extends CType = "div">(
   baseClass: string | ((props: P) => string),
@@ -37,7 +31,9 @@ function createStyled<P extends object = object, T extends CType = "div">(
       const baseClassValue =
         typeof baseClass === "function" ? baseClass(props as P) : baseClass;
 
-      const dynamicClass = config.styleFn ? config.styleFn(props as P) : "";
+      const dynamicClass = config.styleWithProps
+        ? config.styleWithProps(props as P)
+        : "";
       const variantClass =
         variant && config.variants ? config.variants[variant] : "";
 
@@ -60,8 +56,27 @@ function createStyled<P extends object = object, T extends CType = "div">(
 }
 
 /**
- * Generates a styled utility for each HTML tag.
+ * Generates a component for a specific HTML tag.
  */
+function createHtmlTag<P extends object = object, T extends CType = "div">(
+  tag: T
+) {
+  return (
+    baseClass: string | ((props: P) => string),
+    config?: Partial<StyledComponentConfig<P, T>>
+  ) => createStyled<P, T>(baseClass, { ...config, as: tag });
+}
+
+/**
+ * The generic method for creating custom components or tags.
+ */
+function create<P extends object = object, T extends CType = "div">(
+  baseClass: string | ((props: P) => string),
+  config?: Partial<StyledComponentConfig<P, T>>
+) {
+  return createStyled<P, T>(baseClass, config);
+}
+
 const htmlTags = [
   "div",
   "span",
@@ -93,27 +108,16 @@ const htmlTags = [
   "figcaption",
 ] as const;
 
+/**
+ * The Styled object with the methods for each HTML tag and the method ‘create’.
+ */
 const Styled = Object.assign(
-  <T extends CType = "div">(baseClass: string | ((props: any) => string)) => {
-    return <P extends object = object>({
-      as,
-      variants,
-      styleFn,
-    }: Partial<StyledComponentConfig<P, T>> = {}) =>
-      createStyled<P, T>(baseClass, { as, variants, styleFn });
-  },
+  // Adds a method for each HTML tag
   Object.fromEntries(
-    htmlTags.map((tag) => [
-      tag,
-      <P extends object = object>(baseClass: string | ((props: P) => string)) =>
-        createStyled<P, typeof tag>(baseClass, { as: tag }),
-    ])
+    htmlTags.map((tag) => [tag, createHtmlTag<any, typeof tag>(tag)])
   ),
   {
-    create: <P extends object, T extends CType = "div">(
-      baseClass: string | ((props: P) => string),
-      config: Partial<StyledComponentConfig<P, T>> = {}
-    ) => createStyled<P, T>(baseClass, config),
+    create, // Generic method to create a component
   }
 );
 
